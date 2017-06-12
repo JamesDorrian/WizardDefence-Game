@@ -1,0 +1,1216 @@
+Information about object: obj_bomb
+Sprite: sp_bomb
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//target wizard
+x_target = obj_wizard.x;
+y_target = obj_wizard.y;
+
+//move towards
+if(global.difficulty < 3){
+    move_towards_point(x_target, y_target, 6);
+} else {
+    move_towards_point(x_target, y_target, 10);
+}
+
+
+Step Event:
+
+execute code:
+
+//check for bomb collision
+if(place_meeting(x,y,obj_shield)){
+    //blow up bomb
+    instance_create(x,y,obj_explosion);
+    instance_create(x,y,obj_explosion);
+    instance_create(x,y,obj_explosion);
+    instance_destroy();
+}
+
+//remove health and destroy bomb
+if(place_meeting(x,y,obj_wizard)){
+    if (global.difficulty < 3){
+        global.hp -= 5;
+    } else {
+        global.hp -= 10;
+    }
+    instance_destroy();
+}
+
+if(place_meeting(x,y,obj_fireball)){
+    instance_destroy();
+}
+
+//incase a bomb hits the box (which it shouldn't ...
+if(place_meeting(x,y,obj_box)){
+    instance_create(x,y,obj_explosion);
+    instance_destroy();
+}
+
+______________________________________________________
+
+Information about object: obj_wizard
+Sprite: sp_wizard
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+set variable direction to 90
+set variable speed to 0
+execute code:
+
+//James Dorrian 13369451
+//attaches shield to wizard
+instance_create(x,y,obj_shield);
+
+
+set variable counter to 0
+set variable global.hp to 100
+set variable global.kills to 0
+set variable global.bosses to 0
+set variable global.enemy_total to 0
+set variable global.kills_bosses to 0
+set variable global.enemies to irandom_range(8,12);
+set variable global.sound_on_off to 0
+set variable global.round_number to 1
+set variable global.xlocations[0] to 0
+Alarm Event for alarm 0:
+
+execute code:
+
+//bullet was the original weapon I used but it didnt make much sense as
+//I wanted my hero to be a wizard. This class is obsolete but I had an
+//implementation for it in the 'Easy' level where the magic weapon (fireball)
+//require charging but the bullets could be fired with a single tap
+bullet = instance_create(x+70,y,obj_bullet);
+bullet.direction = image_angle;
+bullet.speed = 10;
+
+
+
+Alarm Event for alarm 1:
+
+execute code:
+
+//fireball is the default magic weapon
+fb = instance_create(x+70,y,obj_fireball);
+fb.direction = image_angle;
+fb.speed = 15;
+
+
+
+Step Event:
+
+execute code:
+
+image_angle = direction;
+image_speed = 0;
+
+if (keyboard_check(vk_space)){
+    if(global.sound_on_off == 0){
+        audio_play_sound(sound_charge, 5, false);//plays a charge sound (2 sec) 
+    }
+    if (global.difficulty < 2){
+        if(counter < 5) {counter += 1;}
+    } else {
+        if(counter < 7) {counter += 1;}//takes longer to charge on higher difficulties
+    } 
+}
+
+if (keyboard_check_released(vk_space)){
+    if (global.difficulty < 2){
+        if (counter >= 5){
+        alarm[1] = 1;
+        counter = 0;}
+    } else {
+        if (counter >= 7){
+        alarm[1] = 1;
+        counter = 0;} 
+    }
+    }
+
+if (global.hp <= 0){
+    //instance_destroy(); bad idea to destroy the hero as I have many other objects
+    //bound to it. Instead I display the end game screen.
+    instance_create(400,400,obj_endgame);
+    }
+
+Keyboard Event for <Left> Key:
+
+execute code:
+
+//James Dorrian 13369451
+if (direction >= 180){
+    direction = 180; //makes rotation stay on screen
+} else {
+    direction += 10; 
+}
+
+Keyboard Event for <Right> Key:
+
+execute code:
+
+//James Dorrian 13369451
+if (direction <= 0){
+    direction = 0; //makes rotation stay on screen
+} else {
+  direction -= 10;
+  }
+
+Keyboard Event for A-key Key:
+
+execute code:
+
+//James Dorrian 13369451
+if (direction >= 180){
+    direction = 180; //makes rotation stay on screen
+} else {
+  direction += 5;
+}
+
+Keyboard Event for D-key Key:
+
+execute code:
+
+//James Dorrian 13369451
+if (direction <= 0){
+    direction = 0; //makes rotation stay on screen
+} else {
+  direction -= 5;
+  }
+
+______________________________________________________
+
+Information about object: obj_enemy
+Sprite: sp_enemy
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//set variables for enemy and add location to array to avoid collisions
+hp = 5;
+dist = 600;
+speed = 6;
+fire_path_clear = 1; //where 1 is enabled, but static to shoot
+global.xlocations[array_length_1d(global.xlocations)] = x;
+global.enemy_total += 1; //increase the total number of spawned enemies
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+
+//destroy if hitpoints < 0
+if (hp <= 0) {
+    global.kills += 1;
+    instance_destroy();
+}
+
+//stop them leaving room on x axis
+if (x <= 0){
+    x = 0;
+    direction = direction - 180;
+} if (x > room_width){
+    x = room_width;
+    direction = direction - 180;
+} if (y < 30){
+    direction = 270; //set off moving downwards once spawned
+} 
+
+//form a ring which is 550px from wizard (magic weapon shoots approx 500px)
+if ( point_distance(obj_wizard.x, obj_wizard.y, x, y) <= dist){
+    speed = 0;
+    if (point_distance(obj_wizard.x, obj_wizard.y, x, y) <= 350){
+        instance_create(x,y,obj_boss);
+        instance_destroy();
+    }
+}
+
+//% chance of shooting
+shoot_or_not = irandom(200);
+//must be stationary to throw TNT
+//must have clear fire path
+if (shoot_or_not == 0 && speed == 0 && fire_path_clear == 1){ 
+    //shoot
+    instance_create(x,y,obj_bomb);
+}
+
+//destroy if hit by bomb scrapnel
+if (place_meeting(x,y,obj_scrapnel)){
+    hp = hp - 10;
+}
+
+//chance of moving into the inner ring -> going berzerk
+//the chance greatly increases depending on the round
+charge_or_not = irandom(3000/global.difficulty+1); 
+if (charge_or_not == 0){
+   dist = 350;
+   move_towards_point(obj_wizard.x, obj_wizard.y, 8);
+}
+
+if (point_distance(obj_wizard.x, obj_wizard.y, x, y) <= dist) { //once in outer ring
+    //check if path obscured by box
+    startx = x;
+    starty = y;
+    targetx = obj_wizard.x;
+    targety = obj_wizard.y;
+    target = obj_box;
+    len = 0;
+    dir = point_direction(startx,starty,targetx,targety);
+    max_length = point_distance(startx,starty,targetx,targety);
+    //set to normal here
+    fire_path_clear = 1;
+    speed = 0;
+    while (len < max_length) {
+        castx = startx + lengthdir_x(len, dir);
+        casty = starty + lengthdir_y(len,dir);
+        if (collision_point(castx,casty,target,false,false)){
+        //collision occured
+        //check slope and if positive move right and negative left
+        direction = irandom(1)*180;
+        speed = 10;
+    }
+    len += 1;
+    }
+}
+
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+//draw healthbar over the head of enemies
+draw_self();
+draw_healthbar(x-30,y-40,x+30,y-46,hp*20,c_black,c_green,c_red,0,true, false);
+//x,y location of object, x,y depth of healthbar, factor, background, empty, full, direction, showbackground, show border 
+
+______________________________________________________
+
+Information about object: obj_shield
+Sprite: sp_shield
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//This changes the size of the shield depending on the difficultly
+//but still maintains the diameter
+direction = 0;
+switch(global.difficulty){
+
+case 1: break; //do nothing
+
+case 2:{
+    image_xscale -= 0.1;
+    image_yscale -= 0.1;
+    break;
+}
+
+case 3:{
+    image_xscale -= 0.3;
+    image_yscale -= 0.3;
+    break;
+}
+
+case 4:{
+    image_xscale -= 0.5;
+    image_yscale -= 0.5;
+    break;
+}
+
+default: break;
+
+}
+
+Step Event:
+
+execute code:
+
+image_angle = obj_wizard.image_angle; //mimics wizards angle
+x = obj_wizard.x + lengthdir_x(100, obj_wizard.image_angle);
+y = obj_wizard.y + lengthdir_y(100, obj_wizard.image_angle);
+
+
+
+______________________________________________________
+
+Information about object: obj_spawner
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+alarm[0] = 1; //spawn a creep immediately
+global.enemies-=1; //reduce # of enemies in spawn queue
+counter = 0; //used to control rate of spawn through different levels
+
+Alarm Event for alarm 0:
+
+execute code:
+
+//James Dorrian 13369451
+//spawns enemies
+xlocation = round(random(room_width)); 
+//check to see if the randomly chosen x co-ord is already being occupied by..
+//another enemy and if it is, generate a new random number
+
+//I initially used a path with a number of points and checks to see..
+//..if a certain point was occupied, this however caused some issues
+for (i = 1; i < array_length_1d(global.xlocations); i+=1){
+    if (xlocation >= global.xlocations[i]-50 && xlocation <= global.xlocations[i]+50){
+        alarm[0] = 1;
+        exit;
+    }
+}
+instance_create(xlocation, 0, obj_enemy);
+
+Alarm Event for alarm 1:
+
+execute code:
+
+//James Dorrian 13369451
+//Used this class to spawn 'bosses' or 'berzerkers' directly.
+//Mainly for testing but also toyed with the idea of having
+//them spawn after a variable number of creeps were destroyed.
+//Spawning berzerkers like that made the game overly boring so this class
+//is now obsolete
+instance_create(random(room_width), irandom_range(0, 300), obj_boss);
+global.enemy_total += 1;
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+counter+=1;
+
+//higher round -> faster spawning
+if (counter >= 240/global.difficulty && global.enemies > 0){ 
+    alarm[0] = random(10);
+    global.enemies-=1; //number of enemies in spawn queue
+    counter = 0;
+}
+
+//if all enemies defeated for given round and none in spawn queue
+if (global.enemy_total == (global.kills + global.kills_bosses) && global.enemies == 0){
+    //create 1st monster immediately so this if statement evaluates to false on next step
+    instance_create(room_width,0,obj_enemy); 
+    //number of enemies that join the spawn queue increase each round
+    global.enemies += irandom_range(1+global.difficulty, (global.round_number + global.difficulty)); 
+    //reset the array of x co-ordinate locations in which creeps spawned this round
+    for(i = 0; i < array_length_1d(global.xlocations); i += 1){
+        global.xlocations[i] = 0;
+    }
+    global.round_number += 1; //increase the round number
+}
+
+if (global.round_number == 7+global.difficulty){
+    //stops above condition evaluating to true
+    instance_create(400,400,obj_endgame);
+    //stop game bring up score and show breakdown of points
+    //offer 2 options 1) replay 2) quit
+    
+}
+
+______________________________________________________
+
+Information about object: obj_fireball
+Sprite: sp_fireball
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+dist = 0;//to limit distance a fireball can travel
+image_angle = obj_wizard.image_angle;
+
+Step Event:
+
+execute code:
+
+//James Dorrian
+dist += 1;
+if(global.difficulty < 2){ //beginner fireball size increases to make game easier
+    image_xscale += 0.03
+    image_yscale += 0.03
+}
+
+//if fireball hits an enemy
+hit = instance_place(x,y,obj_enemy); 
+if (hit != noone){
+    instance_create(hit.x,hit.y,obj_fireball_explode); //explosion animation
+    hit.hp -= 10; //reduce 10 hp
+    instance_destroy(); //destroy fireball
+}
+
+//if fireball hits a berzerker
+boss_hit = instance_place(x,y,obj_boss);
+if (boss_hit != noone){
+    boss_hit.hp -= 10; //reduce 10 hp
+    if(boss_hit.hp > 0){
+    //do noting
+    } else {
+        instance_create(boss_hit.x,boss_hit.y,obj_fireball_explode);
+    }
+    instance_destroy();//destroy fireball
+}
+if (dist > 30){
+    instance_destroy(); //limits how far the fireball can travel
+}
+
+//if fireball hits the box
+box_hit = instance_place(x,y,obj_box);
+if(place_meeting(x,y,obj_box)){
+    instance_create(box_hit.x,box_hit.y,obj_fireball_explode);
+    instance_destroy();
+}
+
+
+Other Event: Outside Room:
+
+execute code:
+
+//James Dorrian 13369451
+instance_destroy();
+
+______________________________________________________
+
+Information about object: obj_scrapnel
+Sprite: sp_scrapnel
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian
+//when created get direction of wizard and send scrapnel that direction
+random_angle = random(50);
+pos_or_neg = irandom(2);
+speed = 20;
+//bombs are unpredictable and so is scrapnel so the angles that it rebounds
+//are somewhat random but with the range of +-50 degrees from the angle of impact
+//with the shield
+if (pos_or_neg == 0){
+    direction = obj_wizard.image_angle + random_angle;
+} if (pos_or_neg == 1) {
+    direction = obj_wizard.image_angle - random_angle;
+} if (pos_or_neg == 2) {
+    direction = obj_wizard.image_angle;
+}
+
+
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+//if scrapnel hits the enemy destroy the enemy
+if (place_meeting(x,y,obj_enemy)){
+    instance_destroy();
+}
+
+Other Event: Outside Room:
+
+execute code:
+
+//James Dorrian 13369451
+instance_destroy();
+
+______________________________________________________
+
+Information about object: obj_explosion
+Sprite: sp_explosion
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//explosion is when the tnt hits the shield
+//not to be confused with obj_fireball_explode which is when
+//a fireball hits an enemy/berzerker
+instance_create(x,y,obj_scrapnel); 
+alarm[0] = 2;
+
+Alarm Event for alarm 0:
+
+execute code:
+
+//James Dorrian 13369451
+instance_destroy(); //destroy the animation 
+
+______________________________________________________
+
+Information about object: obj_controller
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+//set x and y axis to left
+draw_set_halign(fa_left);
+draw_set_valign(fa_left);
+
+//health bar
+draw_sprite(sp_green, 1, 34, 52);
+draw_sprite_ext(sp_health, 1, 34, 52, global.hp/100, 1, 0, c_white, 1);//sprite,subimage,x,y,x scale, y scale, rotation 0->none, light colour, opacity
+draw_sprite(sp_border, 1, 32, 50);
+
+//power bar
+if (global.difficulty <= 2){
+    draw_sprite_ext(sp_power,1 ,34, 100, obj_wizard.counter/5, 1, 0, c_white, 1);
+} else {
+    draw_sprite_ext(sp_power,1 ,34, 100, obj_wizard.counter/7, 1, 0, c_white, 1);
+}
+draw_sprite(sp_border,1,32,98);
+
+//kill calculator
+draw_set_color(c_black);
+draw_text(32,16, "Score: " + string(global.kills + (global.kills_bosses)));
+
+//number of enemies remaining & bosses
+draw_set_color(c_black);
+draw_text(0, 550, "Round: " + string(global.round_number));
+draw_text(0,600, "Enemies Killed: " + string(global.kills + global.kills_bosses));
+
+//used only for testing purposes
+//draw_text(0, 400, "arr: " + string(global.xlocations));
+//draw_text(0,700, "enemytotal: " + string(global.enemy_total)); 
+
+
+______________________________________________________
+
+Information about object: obj_menu
+Sprite: sp_arrow
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//4 items in the start menu
+menu[0] = "Start";
+menu[1] = "Difficulty";
+menu[2] = "Options";
+menu[3] = "Quit";
+
+
+space = 64; //space between elements
+mpos = 0; //menu position 0 represents mouse is over "Start"
+
+
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+var move = 0;
+move -= max(keyboard_check_pressed(vk_up), keyboard_check_pressed("w"),0);
+//max means take the biggest value of the values given, (keyboard press = 1)
+move += max(keyboard_check_pressed(vk_down), keyboard_check_pressed("s"),0);
+
+if (move != 0){ //if up or down is pressed, move the arrow
+    mpos += move;
+    if (mpos < 0){
+        mpos = array_length_1d(menu) - 1;
+    } if (mpos > array_length_1d(menu) - 1){
+        mpos = 0;    
+    }
+}
+
+//check if enter/space key pressed (which will click the menu item)
+var start = 0;
+start = max(keyboard_check_released(vk_space), keyboard_check_released(vk_enter), 0);
+
+if (start == 1){
+    sc_menu(); //runs the menu script
+}
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+draw_set_halign(fa_left);
+draw_set_valign(fa_middle);
+draw_set_font(font_menu);
+draw_set_color(c_white);
+
+var temp = 0;
+while ( temp < array_length_1d(menu)){
+    //draw the four menu items
+    draw_text((x + space), (y + (temp * space)), string(menu[temp]));
+    temp += 1;
+}
+
+//draw arrow
+draw_sprite(sp_arrow, 0, x + 16, y + (mpos * space));
+
+
+______________________________________________________
+
+Information about object: obj_levels
+Sprite: sp_arrow
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//level options
+menu[0] = "Level 0: Beginner"; //default
+menu[1] = "Level 1: Easy";
+menu[2] = "Level 2: Advanced";
+menu[3] = "Level 3: Expert";
+
+
+space = 64;
+mpos = 0; //menu position 0 represents mouse is over "Start"
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+var move = 0;
+move -= max(keyboard_check_pressed(vk_up), keyboard_check_pressed("w"),0);
+//max means take the biggest value of the values given, (keyboard press = 1)
+move += max(keyboard_check_pressed(vk_down), keyboard_check_pressed("s"),0);
+
+if (move != 0){ //if up or down is pressed, move the arrow
+    mpos += move;
+    if (mpos < 0){
+        mpos = array_length_1d(menu) - 1;
+    } if (mpos > array_length_1d(menu) - 1){
+        mpos = 0;    
+    }
+}
+
+//check if enter/space key pressed (which will click the menu item)
+var start = 0;
+start = max(keyboard_check_released(vk_space), keyboard_check_released(vk_enter), 0);
+
+if (start == 1){
+    sc_levels(); //run levels script
+}
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+draw_set_halign(fa_left);
+draw_set_valign(fa_middle);
+draw_set_font(font_menu);
+draw_set_color(c_white);
+
+var temp = 0;
+while ( temp < array_length_1d(menu)){
+    //write the 4 menu items
+    draw_text((x + space), (y + (temp * space)), string(menu[temp]));
+    temp += 1;
+}
+
+//draw the arrow
+draw_sprite(sp_arrow, 0, x + 16, y + (mpos * space));
+
+
+______________________________________________________
+
+Information about object: obj_boss
+Sprite: sp_boss
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+hp = 10;
+global.bosses -= 1;
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+//move boss toward wizard
+//move_towards_point(obj_wizard.x, obj_wizard.y, 5);
+wizard = instance_place(x,y,obj_wizard);
+mp_potential_step(obj_wizard.x, obj_wizard.y, 6, false);
+//xgoal,ygoal,speed,avoid all types (T) / avoid solid only (F)
+
+
+//berzerker wizard collision
+if(wizard != noone){
+    global.hp -= 25; 
+    global.enemy_total -= 2; //as an enemy is destroy using instance_destroy and
+    //a berzerker is created using instance_create without increasing kills/reducing
+    //round target kills -> decrease round target kills by 2
+    instance_create(x,y,obj_fireball_explode);
+    instance_destroy();
+}
+
+//what to do when the boss dies
+if(hp <= 0){
+    global.kills_bosses += 1;
+    instance_destroy();
+}
+
+//if hit by scrapnel then reduce health
+if (place_meeting(x,y,obj_scrapnel)){
+    hp = hp - 10;
+}
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+draw_self();
+draw_healthbar(x-48,y-50,x+48,y-56, hp*10 ,c_black,c_green,c_red,0,true,true);
+//x co-ord 1, y co-ord 1, x2,y2,scalar,background,empty,full,direction,show background, show border
+ 
+
+______________________________________________________
+
+Information about object: obj_fireball_explode
+Sprite: sp_fireball_explode
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+alarm[0] = 7
+//play explosion sound
+if(global.sound_on_off){
+    audio_play_sound(sound_explosion, 10, false);
+    //name of sound, priority(0-100), loop (T/F)
+}
+
+Alarm Event for alarm 0:
+
+execute code:
+
+//James Dorrian 13369451
+instance_destroy();
+
+______________________________________________________
+
+Information about object: obj_pause
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: true
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+global.pause = 0;
+menu[0] = "Continue";
+menu[1] = "Quit";
+space = 50;
+mpos = 0;
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+//If ESC key pressed during gameplay
+if(global.pause){
+    var move = 0;
+    move -= max(keyboard_check_pressed(vk_up), keyboard_check_pressed("w"),0);
+    //max means take the biggest value of the values given, (keyboard press = 1)
+    move += max(keyboard_check_pressed(vk_down), keyboard_check_pressed("s"),0);
+
+    if (move != 0){ //if up or down is pressed, move the arrow
+        mpos += move;
+        if (mpos < 0){
+            mpos = array_length_1d(menu) - 1;
+        } if (mpos > array_length_1d(menu) - 1){
+        mpos = 0;    
+        }
+    }
+    
+    //check if enter/space key pressed (which will click the menu item)
+    var start = 0;
+    start = max(keyboard_check_released(vk_space), keyboard_check_released(vk_enter), 0);
+
+    if (start == 1){
+        sc_pause(); //run paused script
+    }
+} else {
+}
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+//Display pause menu
+if (global.pause){
+    draw_set_color(c_black);
+    draw_set_alpha(0.50);//50% transparancy
+    draw_rectangle(0,0,room_width,room_height,0);//0 for outline
+    //algin text
+    draw_set_halign(fa_center);
+    draw_set_alpha(1);
+    draw_text(room_width/2,250, 'Game Paused');
+    draw_text(room_width/2,300, 'Score: ' + string(global.kills + (global.kills_bosses)));
+    draw_set_color(c_white);
+    var temp = 0;
+    var _y = 350;
+    while ( temp < array_length_1d(menu)){
+        draw_text((room_width/2), (_y + (temp * space)), string(menu[temp]));
+        temp += 1;
+    }
+    draw_sprite(sp_arrow, 0, (room_width/2) - 100, _y + (mpos * space) + 16);
+    draw_set_color(c_black);
+}
+
+Key Press Event for <Escape> Key:
+
+execute code:
+
+//James Dorrian 13369451
+if (!global.pause) { //pause == 0
+    global.pause = 1;
+    instance_deactivate_all(true); //stops all objects where they are
+} else {
+    global.pause = 0;
+    instance_activate_all(); //plays all objects where they were
+}
+
+______________________________________________________
+
+Information about object: obj_obstacle
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+______________________________________________________
+
+Information about object: obj_box
+Sprite: sp_box
+Solid: true
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Step Event:
+
+execute code:
+
+
+______________________________________________________
+
+Information about object: obj_wall
+Sprite: sp_wall
+Solid: true
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+______________________________________________________
+
+Information about object: obj_endgame
+Sprite: 
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+menu[0] = "Play Again";
+menu[1] = "Quit";
+space = 50;
+mpos = 0;
+instance_deactivate_all(true);
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+//If game over
+    var move = 0;
+    move -= max(keyboard_check_pressed(vk_up), keyboard_check_pressed("w"),0);
+    //max means take the biggest value of the values given, (keyboard press = 1)
+    move += max(keyboard_check_pressed(vk_down), keyboard_check_pressed("s"),0);
+
+    if (move != 0){ //if up or down is pressed, move the arrow
+        mpos += move;
+        if (mpos < 0){
+            mpos = array_length_1d(menu) - 1;
+        } if (mpos > array_length_1d(menu) - 1){
+        mpos = 0;    
+        }
+    }
+    
+    //check if enter/space key pressed (which will click the menu item)
+    var start = 0;
+    start = max(keyboard_check_released(vk_space), keyboard_check_released(vk_enter), 0);
+
+    if (start == 1){
+        sc_endgame(); //run paused script
+    }
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+//Display eng of game menu
+draw_set_color(c_black);
+draw_set_alpha(0);
+draw_rectangle(0,0,room_width,room_height,0);//0 for outline
+//algin text
+draw_set_halign(fa_center);
+draw_set_alpha(1);
+if (global.round_number == global.difficulty + 7){
+    draw_text(room_width/2,250, 'GAME COMPLETE! CONGRATULATIONS!!!!');
+} else {
+    draw_text(room_width/2,250, 'YOU DIED!');
+}
+draw_text(room_width/2,300, 'Enemy Kills: ' + string(global.kills));
+draw_text(room_width/2,350, 'Berzerker Kills: ' + string(global.kills_bosses));
+draw_text(room_width/2,400, 'Round Survived: ' + string(global.round_number));
+draw_text(room_width/2,450, 'Damage Taken: ' + string(100 - global.hp));
+score = (global.kills + (global.kills_bosses)*3)+(global.hp/50)+(3*global.difficulty)+(global.round_number * 2);
+draw_text(room_width/2,500, 'FINAL SCORE: ' + string(score));
+draw_set_color(c_white);
+var temp = 0;
+var _y = 550;
+while ( temp < array_length_1d(menu)){
+    draw_text((room_width/2), (_y + (temp * space)), string(menu[temp]));
+    temp += 1;
+}
+draw_sprite(sp_arrow, 0, (room_width/2) - 100, _y + (mpos * space) + 16);
+draw_set_color(c_black);
+
+
+______________________________________________________
+
+Information about object: obj_options
+Sprite: sp_arrow
+Solid: false
+Visible: true
+Depth: 0
+Persistent: false
+Parent: 
+Children: 
+Mask: 
+
+No Physics Object
+Create Event:
+
+execute code:
+
+//James Dorrian 13369451
+//4 items in the start menu
+menu[0] = "Sound On";
+menu[1] = "Sound Off";
+
+
+space = 64; //space between elements
+mpos = 0; //menu position 0 represents mouse is over "Start"
+
+
+
+Step Event:
+
+execute code:
+
+//James Dorrian 13369451
+var move = 0;
+move -= max(keyboard_check_pressed(vk_up), keyboard_check_pressed("w"),0);
+//max means take the biggest value of the values given, (keyboard press = 1)
+move += max(keyboard_check_pressed(vk_down), keyboard_check_pressed("s"),0);
+
+if (move != 0){ //if up or down is pressed, move the arrow
+    mpos += move;
+    if (mpos < 0){
+        mpos = array_length_1d(menu) - 1;
+    } if (mpos > array_length_1d(menu) - 1){
+        mpos = 0;    
+    }
+}
+
+//check if enter/space key pressed (which will click the menu item)
+var start = 0;
+start = max(keyboard_check_released(vk_space), keyboard_check_released(vk_enter), 0);
+
+if (start == 1){
+    sc_options(); //runs the menu script
+}
+
+Draw Event:
+
+execute code:
+
+//James Dorrian 13369451
+draw_set_halign(fa_left);
+draw_set_valign(fa_middle);
+draw_set_font(font_menu);
+draw_set_color(c_white);
+
+var temp = 0;
+while ( temp < array_length_1d(menu)){
+    //write the 4 menu items
+    draw_text((x + space), (y + (temp * space)), string(menu[temp]));
+    temp += 1;
+}
+
+//draw the arrow
+draw_sprite(sp_arrow, 0, x + 16, y + (mpos * space));
+
+
+______________________________________________________
